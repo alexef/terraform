@@ -47,9 +47,12 @@ func testCheckAzureRMStorageContainerExists(name string) resource.TestCheckFunc 
 		}
 
 		armClient := testAccProvider.Meta().(*ArmClient)
-		blobClient, err := armClient.getBlobStorageClientForStorageAccount(resourceGroup, storageAccountName)
+		blobClient, accountExists, err := armClient.getBlobStorageClientForStorageAccount(resourceGroup, storageAccountName)
 		if err != nil {
 			return err
+		}
+		if !accountExists {
+			return fmt.Errorf("Bad: Storage Account %q does not exist", storageAccountName)
 		}
 
 		containers, err := blobClient.ListContainers(storage.ListContainersParameters{
@@ -90,9 +93,12 @@ func testCheckAzureRMStorageContainerDestroy(s *terraform.State) error {
 		}
 
 		armClient := testAccProvider.Meta().(*ArmClient)
-		blobClient, err := armClient.getBlobStorageClientForStorageAccount(resourceGroup, storageAccountName)
+		blobClient, accountExists, err := armClient.getBlobStorageClientForStorageAccount(resourceGroup, storageAccountName)
 		if err != nil {
 			//If we can't get keys then the blob can't exist
+			return nil
+		}
+		if !accountExists {
 			return nil
 		}
 
